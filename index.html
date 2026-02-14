@@ -124,7 +124,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: #000; /* Fond noir pour les bandes vidéo */
+            background: #000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -166,21 +166,6 @@
             letter-spacing: 4px;
             text-transform: uppercase;
         }
-
-        /* --- STYLE VIDÉO MODIFIÉ --- */
-        #final-video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* 'contain' assure que toute la vidéo est visible et centrée */
-            object-fit: contain; 
-            object-position: center;
-            opacity: 0;
-            z-index: 101; 
-            transition: opacity 1.5s ease;
-        }
     </style>
 </head>
 <body>
@@ -204,11 +189,6 @@
             </div>
             <div class="loader-text">Chargement de notre histoire... <span id="percent">0</span>%</div>
         </div>
-
-        <video id="final-video" playsinline preload="auto" muted>
-            <source src="https://drive.google.com/file/d/1xJM38VdHFkd3FyHS_Q49OaRZodXHNmYM/view?usp=sharing" type="video/mp4">
-            Ton navigateur ne supporte pas la vidéo.
-        </video>
     </div>
 
    <script>
@@ -216,13 +196,16 @@
     const btnYes = document.querySelector('#btn-yes');
     const loaderFill = document.querySelector('.loader-fill');
     const percentText = document.querySelector('#percent');
-    const video = document.querySelector('#final-video');
     const loaderWrapper = document.querySelector('.loader-wrapper');
     const successOverlay = document.querySelector('.success-overlay');
+
+    // Lien de redirection
+    const videoLink = "https://drive.google.com/file/d/1xJM38VdHFkd3FyHS_Q49OaRZodXHNmYM/view?usp=sharing";
 
     const dangerZone = 120;
     const fleeDistance = 180;
 
+    // Animation du bouton NON qui fuit
     document.addEventListener('mousemove', (e) => {
         const rect = btnNo.getBoundingClientRect();
         const btnCenterX = rect.left + rect.width / 2;
@@ -243,59 +226,35 @@
         }
     });
 
+    // Clic sur le bouton OUI
     btnYes.addEventListener('click', () => {
-        // Astuce pour contourner le blocage vidéo
-        video.muted = true; 
-        video.play().then(() => {
-            video.pause();
-            video.currentTime = 0;
-            video.muted = false; 
-        }).catch((err) => {
-            console.error("Erreur lecture initiale:", err);
-            video.muted = false;
-        });
-
+        
+        // Animation de sortie du conteneur
         gsap.to('.container', { scale: 0.8, opacity: 0, duration: 0.8, ease: "power2.inOut" });
         gsap.to(successOverlay, { autoAlpha: 1, duration: 1 });
 
         let progress = { value: 0 };
         
-        // Remets à 60 une fois que tu as fini tes tests
+        // --- CHARGEMENT ---
         gsap.to(progress, {
             value: 100,
-            duration: 60, 
+            duration: 30, // MODIFIÉ : 30 secondes
             ease: "linear",
             onUpdate: () => {
                 loaderFill.style.width = `${progress.value}%`;
                 percentText.innerText = Math.round(progress.value);
             },
             onComplete: () => {
-                gsap.to(loaderWrapper, { 
-                    opacity: 0, 
-                    duration: 1, 
-                    onComplete: () => {
-                        loaderWrapper.style.display = 'none';
-                    }
-                });
+                // Modification du texte juste avant la redirection
+                document.querySelector('.loader-text').innerHTML = "Lancement de la vidéo...";
                 
-                video.style.opacity = 1;
-                
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(_ => {
-                        console.log("Vidéo lancée");
-                    })
-                    .catch(error => {
-                        console.log("Erreur lecture:", error);
-                        video.controls = true;
-                    });
-                }
+                // --- REDIRECTION VERS LE LIEN DRIVE ---
+                setTimeout(() => {
+                    window.location.href = videoLink;
+                }, 500); // Petit délai pour laisser lire le dernier message
             }
         });
     });
 </script>
 </body>
-
 </html>
-
-
