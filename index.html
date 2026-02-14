@@ -133,6 +133,7 @@
             opacity: 0;
             pointer-events: none;
             visibility: hidden;
+            cursor: pointer; /* Indique qu'on peut cliquer si ça bloque */
         }
 
         .loader-wrapper {
@@ -182,7 +183,7 @@
         </div>
     </div>
 
-    <div class="success-overlay">
+    <div class="success-overlay" onclick="forceRedirect()">
         <div class="loader-wrapper">
             <div class="loader-bar">
                 <div class="loader-fill"></div>
@@ -201,6 +202,21 @@
 
     // Lien de redirection
     const videoLink = "https://drive.google.com/file/d/1xJM38VdHFkd3FyHS_Q49OaRZodXHNmYM/view?usp=sharing";
+    let isRedirecting = false;
+
+    // Fonction de redirection sécurisée
+    function forceRedirect() {
+        if(isRedirecting) return; // Évite les doubles appels
+        isRedirecting = true;
+        document.querySelector('.loader-text').innerHTML = "Ouverture de la vidéo...";
+        // Utilisation de replace pour éviter les blocages pop-up
+        window.location.replace(videoLink);
+        
+        // Fallback ultime : si replace ne marche pas, on force href
+        setTimeout(() => {
+            window.location.href = videoLink;
+        }, 500);
+    }
 
     const dangerZone = 120;
     const fleeDistance = 180;
@@ -231,27 +247,28 @@
         
         // Animation de sortie du conteneur
         gsap.to('.container', { scale: 0.8, opacity: 0, duration: 0.8, ease: "power2.inOut" });
-        gsap.to(successOverlay, { autoAlpha: 1, duration: 1 });
+        
+        // On rend l'overlay visible et interactif (pointer-events)
+        gsap.to(successOverlay, { 
+            autoAlpha: 1, 
+            duration: 1,
+            pointerEvents: "all" // Important : permet de cliquer dessus si ça bloque
+        });
 
         let progress = { value: 0 };
         
         // --- CHARGEMENT ---
         gsap.to(progress, {
             value: 100,
-            duration: 30, // MODIFIÉ : 30 secondes
+            duration: 30, 
             ease: "linear",
             onUpdate: () => {
                 loaderFill.style.width = `${progress.value}%`;
                 percentText.innerText = Math.round(progress.value);
             },
             onComplete: () => {
-                // Modification du texte juste avant la redirection
-                document.querySelector('.loader-text').innerHTML = "Lancement de la vidéo...";
-                
-                // --- REDIRECTION VERS LE LIEN DRIVE ---
-                setTimeout(() => {
-                    window.location.href = videoLink;
-                }, 500); // Petit délai pour laisser lire le dernier message
+                // Tentative de redirection automatique
+                forceRedirect();
             }
         });
     });
